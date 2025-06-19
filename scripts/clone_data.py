@@ -1,9 +1,10 @@
 import os
 from huggingface_hub import snapshot_download, hf_hub_download, list_repo_files
 from typing import List
+import logging
 
 class HFDatasetCloner:
-    def __init__(self, repo_id: str, repo_type: str = "dataset", token: str = None):
+    def __init__(self, repo_id: str, repo_type: str = "dataset", token: str = None, logger: logging.Logger = None):
         """
         Khởi tạo class tải dataset từ Hugging Face.
         :param repo_id: Tên repo, ví dụ "hoivd/SocialData"
@@ -13,6 +14,13 @@ class HFDatasetCloner:
         self.repo_id = repo_id
         self.repo_type = repo_type
         self.token = token
+        self.logger = logger
+    
+    def plot_log(self, message: str):
+        if self.logger:
+            self.logger.info(message)
+        else:
+            self.plot_log(message)
 
     def clone_all(self, local_dir: str = "./hf_data", use_lfs: bool = True) -> str:
         """
@@ -21,7 +29,8 @@ class HFDatasetCloner:
         :param use_lfs: Cho phép tải Git LFS files
         :return: Đường dẫn đến thư mục local
         """
-        print(f"📦 Đang clone toàn bộ repo: {self.repo_id}")
+        self.plot_log(f"📦 Đang clone toàn bộ repo: {self.repo_id}")
+        
         path = snapshot_download(
             repo_id=self.repo_id,
             repo_type=self.repo_type,
@@ -30,7 +39,7 @@ class HFDatasetCloner:
             max_workers=3,
             token=self.token
         )
-        print(f"✅ Repo đã được tải về thư mục: {path}")
+        self.plot_log(f"✅ Repo đã được tải về thư mục: {path}")
         return path
 
     def clone_file(self, filename: str, local_dir: str = "./hf_file") -> str:
@@ -40,7 +49,7 @@ class HFDatasetCloner:
         :param local_dir: Thư mục lưu file
         :return: Đường dẫn file local đã tải
         """
-        print(f"📄 Đang tải file: {filename}")
+        self.plot_log(f"📄 Đang tải file: {filename}")
         file_path = hf_hub_download(
             repo_id=self.repo_id,
             filename=filename,
@@ -49,7 +58,7 @@ class HFDatasetCloner:
             local_dir_use_symlinks=False,
             token=self.token
         )
-        print(f"✅ File đã được lưu tại: {file_path}")
+        self.plot_log(f"✅ File đã được lưu tại: {file_path}")
         return file_path
     
     def clone_folder(self, folder_path: str, local_dir: str = "./hf_folder") -> List[str]:
@@ -59,19 +68,19 @@ class HFDatasetCloner:
         :param local_dir: Thư mục local để lưu các file
         :return: Danh sách đường dẫn các file đã tải
         """
-        print(f"📂 Cloning folder: {folder_path}")
+        self.plot_log(f"📂 Cloning folder: {folder_path}")
         all_files = list_repo_files(self.repo_id, repo_type=self.repo_type, token=self.token)
         target_files = [f for f in all_files if f.startswith(folder_path)]
 
         if not target_files:
-            print(f"❌ Không tìm thấy thư mục hoặc file nào bắt đầu với: {folder_path}")
+            self.plot_log(f"❌ Không tìm thấy thư mục hoặc file nào bắt đầu với: {folder_path}")
             return []
 
         os.makedirs(local_dir, exist_ok=True)
         downloaded_files = []
 
         for file in target_files:
-            print(f"  ⬇️  Downloading: {file}")
+            self.plot_log(f"  ⬇️  Downloading: {file}")
             path = hf_hub_download(
                 repo_id=self.repo_id,
                 filename=file,
@@ -82,7 +91,7 @@ class HFDatasetCloner:
             )
             downloaded_files.append(path)
 
-        print(f"✅ Đã tải {len(downloaded_files)} file từ thư mục {folder_path}")
+        self.plot_log(f"✅ Đã tải {len(downloaded_files)} file từ thư mục {folder_path}")
         return downloaded_files
     
 if __name__ == "__main__":
