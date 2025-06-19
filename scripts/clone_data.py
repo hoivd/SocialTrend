@@ -20,7 +20,7 @@ class HFDatasetCloner:
         if self.logger:
             self.logger.info(message)
         else:
-            self.plot_log(message)
+            print(message)
 
     def clone_all(self, local_dir: str = "./hf_data", use_lfs: bool = True) -> str:
         """
